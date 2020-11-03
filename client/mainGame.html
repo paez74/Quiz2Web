@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="mainGame.css">
+  <title>Pokemon Card</title>
+  <script src="util.js"></script>
+
+</head>
+<body>
+  <br>
+  <div id="container">
+    Pokemon Name: <input type="text" id="item-name">
+    <button id="addElement" class="add-item" onclick="addElement(document.getElementById('item-name').value)"> Find</button>
+  </div>
+  <div id="error-message" class="invisible error">
+    The pokemon you looked for does not exist :(
+  </div>
+  <ul id="list" class="items">  
+  </ul>
+</body>
+</html>
