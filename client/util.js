@@ -1,20 +1,21 @@
 
 
+let globalCards = [];
+let globalGameId = null;
 
-let getPokemonPromise = (pokemonName) => {
+let getCardsPromise = () => {
   return new Promise((resolve, reject) => {
     let req = new XMLHttpRequest();
     req.onload = function(data) {
       console.log(req.response);
     }
-    req.open("GET", `http://localhost:3000/${pokemonName}`);
+    req.open("GET", `http://localhost:3000/cards`);
     req.onreadystatechange = (req_event) => {
       if (req.readyState == XMLHttpRequest.DONE) {
         if (req.status == 200) {
           return resolve(req.response);
         } else {
           console.log(req);
-          showErrorMessage(pokemonName)
           return reject(req.reject);
         }
       }
@@ -23,22 +24,139 @@ let getPokemonPromise = (pokemonName) => {
   });
 };
 
-function addElement(name){
-  var itemName = document.getElementById('item-name');
-  var pokemon = null;
-  if(!name) {
-    itemName.className = "error";
-    return;
-  }
-  itemName.className= "";
-  getPokemonPromise(name.toLowerCase()).then(result => {
-    pokemon = JSON.parse(result);
-    addPokemon(pokemon);
+let getGamePromise = () => {
+  return new Promise((resolve, reject) => {
+    let req = new XMLHttpRequest();
+    req.onload = function(data) {
+      console.log(req.response);
+    }
+    req.open("GET", `http://localhost:3000/game/${globalGameId}`);
+    req.onreadystatechange = (req_event) => {
+      if (req.readyState == XMLHttpRequest.DONE) {
+        if (req.status == 200) {
+          return resolve(req.response);
+        } else {
+          console.log(req);
+          return reject(req.reject);
+        }
+      }
+    };
+    req.send();
+  });
+};
+
+let createGamePromise = () => {
+  return new Promise((resolve, reject) => {
+    let req = new XMLHttpRequest();
+    req.onload = function(data) {
+      console.log(req.response);
+    }
+    req.open("POST", `http://localhost:3000/`);
+    req.onreadystatechange = (req_event) => {
+      if (req.readyState == XMLHttpRequest.DONE) {
+        if (req.status == 200) {
+          return resolve(req.response);
+        } else {
+          console.log(req);
+          return reject(req.reject);
+        }
+      }
+    };
+    req.send();
+  });
+};
+
+let updateGamePromise = () => {
+  console.log(globalCards);
+  return new Promise((resolve, reject) => {
+    let req = new XMLHttpRequest();
+    req.onload = function(data) {
+      console.log(req.response);
+    }
+    let game = {id:globalGameId,cards:globalCards}
+    req.body = game;
+    console.log(req.body);
+    req.open("POST", `http://localhost:3000/game`);
+    req.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+
+    req.onreadystatechange = (req_event) => {
+      if (req.readyState == XMLHttpRequest.DONE) {
+        if (req.status == 200) {
+          return resolve(req.response);
+        } else {
+          console.log(req);
+          return reject(req.reject);
+        }
+      }
+    };
+    req.send(JSON.stringify(game));
+  });
+};
+
+
+
+function addElement(){
+  var cards = null;
+  getCardsPromise().then(result => {
+    console.log(result);
+    cards = JSON.parse(result);
+    cards.forEach(card => {
+      globalCards.push(card);
+      addCard(card);
+    })
+    console.log(globalCards);
+    updateGamePromise().then(result2 => {
+      console.log(result2);
+    })
   })
 
   
 }
-function addPokemon(pokemon) {
+function getStatus(){
+  var id = localStorage.getItem("gameId");
+  console.log(id);
+  if(id == null || id === undefined)
+  {
+    createGamePromise().then(result => {
+      console.log(result);
+      var result = JSON.parse(result);
+      gameId = result._id;
+      localStorage.setItem("gameId",gameId);
+      console.log(gameId);
+      setInterval(function(){ 
+        clean();
+        getGamePromise().then(result => {
+          var game = JSON.parse(result);
+          globalCards = game.cards;
+          globalCards.forEach(card => {
+          addCard(card);
+      })
+        });
+    }, 10000);
+    })
+  } else {
+    globalGameId = id;
+    getGamePromise().then(result => {
+      var game = JSON.parse(result);
+      globalCards = game.cards;
+      globalCards.forEach(card => {
+        addCard(card);
+      })
+      setInterval(function(){ 
+        clean();
+        getGamePromise().then(result => {
+          var game = JSON.parse(result);
+          globalCards = game.cards;
+          globalCards.forEach(card => {
+          addCard(card);
+      })
+        });
+    }, 10000);
+
+    })
+  }
+}
+function addCard(card) {
   var node = document.createElement('li');
   node.className ="added-item";
 
@@ -46,67 +164,61 @@ function addPokemon(pokemon) {
   secondNode.className = "pokeattributes";
   var nodes = [];
   nodes[0] = document.createElement('li');
-  nodes[0].innerText = "Name: " + pokemon.name;
+  nodes[0].innerText = "Number: " + card.number;
   nodes[1] = document.createElement('li');
-  nodes[1].innerText = "Id: " + pokemon.id;
+  nodes[1].innerText = "Sign: " + card.sign;
   nodes[2] = document.createElement('li');
-  nodes[2].innerText = "Weight: " + pokemon.weight;
-  nodes[3] = document.createElement('li');
-  nodes[3].innerText = "Height: " + pokemon.height;
-  nodes[4] = document.createElement('li');
-  nodes[4].innerText = "Base Experience: " + pokemon.base_experience;
+
   
-  for(var i = 0; i < nodes.length ; i++) {
-    secondNode.appendChild(nodes[i]);
-  }
-  //  id, weight, all the types, height, base_experience and the image
-  
-  for(var i = 5; i < pokemon.types.length + 5; i++) {
-    nodes[i] = document.createElement('li');
-    nodes[i].innerText = "Type " + (i - 4).toString()  + ": " + pokemon.types[i-5].type.name;
- }
   for(var i = 0; i < nodes.length ; i++) {
     secondNode.appendChild(nodes[i]);
   }
 
-  // sprites.front_default
+
   var firstNode = document.createElement('img');
-  firstNode.src = pokemon.sprites.front_default;
-  firstNode.className ="image";
+  var sourceFile = "img/";
+  switch(card.sign) {
+    case "hearts":
+          sourceFile += "hearts.jpg"
+          break;
+    case "clovers":
+          sourceFile += "clovers.jpg"
+          break;
+    case "spades":
+          sourceFile += "spades.png"
+          break;
+    case "diamonds":
+          sourceFile += "diamonds.jpg"
+          break;
+  }
+   firstNode.src = sourceFile;
+  
+   firstNode.className ="image";
   node.appendChild(firstNode);
   node.appendChild(secondNode);
   var thirdnode = document.createElement('button')
   thirdnode.innerText = "remove";
   thirdnode.className="remove-item";
   thirdnode.addEventListener('click', function(){
-    remove_item(node);
+    remove_item(node,card._id);
 });
   node.appendChild(thirdnode);
 
   var parent = document.getElementById('list');
-  parent.innerHTML ="";
   parent.appendChild(node);
-  clean();
 }
 
 function clean(){
-  var itemName = document.getElementById('item-name');
-  itemName.value ="";
+  var parent = document.getElementById('list');
+  parent.innerHTML = "";
 }
 
 
-
-function showErrorMessage(pokemonName) {
-  var errorMessage = document.getElementById('error-message');
-  errorMessage.innerText = "The pokemon " + pokemonName +  " does not exist :("
-  errorMessage.className ="visible error";
-  setTimeout(HideErrorMessage,10000)
-}
-function HideErrorMessage() {
-  var errorMessage = document.getElementById('error-message');
-  errorMessage.className ="invisible error";
-}
-let remove_item  = (parent) => {
+let remove_item  = (parent,id) => {
   parent.remove();
+  globalCards = globalCards.filter(globalCard => globalCard._id != id);
+  updateGamePromise().then(result => {
+    console.log(result);
+  })
 }
 
