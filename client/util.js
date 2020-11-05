@@ -132,7 +132,7 @@ function getStatus(){
           addCard(card);
       })
         });
-    }, 10000);
+    }, 5000);
     })
   } else {
     globalGameId = id;
@@ -151,7 +151,7 @@ function getStatus(){
           addCard(card);
       })
         });
-    }, 10000);
+    }, 5000);
 
     })
   }
